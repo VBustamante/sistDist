@@ -1,36 +1,101 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <string.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <signal.h>
 #include <sys/wait.h>
 #include <math.h>
 #include <time.h>
 
-int main(int argc, char **argv){
-	//Start socket
-	#define MSG_BUFSIZE 13
-	char msg[MSG_BUFSIZE];
-	do {
-//		int size = read(pipeEnd[0], msg, MSG_BUFSIZE);
-		printf("\tRecv: %s (%d)\n", msg, size);
-		int value = atoi(msg);
+#define PORT "8080"  // the port users will be connecting to
 
-		// Check primality		
-		int isPrime = value >= 1?1:0;
-		for(int i = 2; i<= ceil(sqrt(value)); i++){
-			if((value % i) == 0){
-				isPrime = 0;
-				break;
+#define BACKLOG 10   // how many pending connections queue will hold
+
+#define MSG_BUFSIZE 13
+
+
+int main(int argc, char **argv){
+	// Start listen socket
+	
+	struct addrinfo *servinfo;
+	{
+		struct addrinfo hint;
+		memset(&hint, 0, sizeof(hint));
+		hint.ai_family = AF_UNSPEC; // Ipv4 or v6
+		hint.ai_socktype = SOCK_STREAM; // TCP
+		hint.ai_flags = AI_PASSIVE;
+		
+		int rv;
+		if((rv = getaddrinfo(NULL, PORT, &hint, &servinfo)) != 0){
+			printf("getaddrinfo: %s\n", gai_strerror(rv));
+			return 1;
+		}
+	}
+	
+	int socket_fd;
+	{
+		struct addrinfo *p;
+		for(p = servinfo; p != NULL; p = p->ai_next){
+			if((socket_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1) continue;
+			
+			int yes = 1;
+			if(setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1){
+				printf("Error setting sock options\n");
+				return 1;
 			}
+			
+			if(bind(socket_fd, p->ai_addr, p->ai_addrlen) == -1){
+				close(socket_fd);
+				continue;
+			}
+			
+			break;
 		}
 		
-		printf("\t%d %sé primo\n", value, isPrime?"":"nao ");
+		if(p == NULL){
+			printf("Failed to bind\n");
+			return 1;
+		}
+	}
+	freeaddrinfo(servinfo);
+	
+	if(listen(socket_fd, BACKLOG) == -1){
+		printf("Failed to bind\n");
+		return 1;
+	}
+	
+	printf("Server up\n");
+	
+	char msg[MSG_BUFSIZE];
+	int nextNum = 1;
+	srand(time(NULL));
+	for(int i = 0; i<=10; i++){
+		printf("Waiting connection\n");
+		struct sockaddr_storage remote_addr;
 		
+		socklen_t sin_size;
+		int socket_res_fd = accept(socket_fd, (struct sockaddr *)&remote_addr, &sin_size);
+		if(socket_res_fd == -1){
+			printf("Error reading request\n");
+			continue;
+		}
 		
-	} while(msg[0] != '0');
-//	close(pipeEnd[0]);
-	printf("Encerrando leitor\n");
+		sprintf(msg, "%d\n", i==10? 0 : nextNum);
+		printf("Sending: %s", msg);
+		if(send(socket_res_fd, msg, strlen(msg), 0) == -1) printf("Error reading request\n");
+
+		close(socket_res_fd);
+		nextNum += (rand() % 8) + 1;
+	}
+	close(socket_fd);
+	printf("Closing Writer\n");
+
 	
 	return 0;
 }
