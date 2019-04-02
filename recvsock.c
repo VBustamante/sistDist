@@ -72,27 +72,33 @@ int main(int argc, char **argv){
 	
 	printf("Server up\n");
 	
+	printf("Waiting connection\n");
+	struct sockaddr_storage remote_addr;
+	
+	socklen_t sin_size;
+	int socket_res_fd = accept(socket_fd, (struct sockaddr *)&remote_addr, &sin_size);
+	if(socket_res_fd == -1){
+		printf("Error connecting to client\n");
+		return 1;
+	}
+
+	
 	char msg[MSG_BUFSIZE];
-	int nextNum = 1;
+	int printNum = 1;
 	srand(time(NULL));
 	for(int i = 0; i<=10; i++){
-		printf("Waiting connection\n");
-		struct sockaddr_storage remote_addr;
-		
-		socklen_t sin_size;
-		int socket_res_fd = accept(socket_fd, (struct sockaddr *)&remote_addr, &sin_size);
-		if(socket_res_fd == -1){
-			printf("Error reading request\n");
-			continue;
-		}
-		
-		sprintf(msg, "%d\n", i==10? 0 : nextNum);
+		printNum = i==10? 0 : printNum;
+		sprintf(msg, "%d\n", printNum);
 		printf("Sending: %s", msg);
 		if(send(socket_res_fd, msg, strlen(msg), 0) == -1) printf("Error reading request\n");
 
-		close(socket_res_fd);
-		nextNum += (rand() % 8) + 1;
+		read(socket_res_fd, msg, MSG_BUFSIZE);
+		
+		printf("%d é %s", printNum, msg);
+		
+		printNum += (rand() % 8) + 1;
 	}
+	close(socket_res_fd);
 	close(socket_fd);
 	printf("Closing Writer\n");
 
