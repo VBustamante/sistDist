@@ -27,19 +27,19 @@ int main(int argc, char **argv){
 		for(int i = 0; i<10; i++){
 			sprintf(msg, "%d", nextNum);
 			printf("Sending: %s\n", msg);
-			write(pipeEnd[1], msg, strlen(msg) + 1);
-			sleep(1);
+			write(pipeEnd[1], msg, MSG_BUFSIZE);
 			nextNum += rand() % 8;
 		}
 		printf("Sending: 0\n");
-		write(pipeEnd[1], "0\0", 2);
+		write(pipeEnd[1], "0", 2);
 		close(pipeEnd[1]);
 		printf("Encerrando escritor\n");
 
 	}else{ // Is parent
 		close(pipeEnd[1]);
+		int size;
 		do {
-			int size = read(pipeEnd[0], msg, MSG_BUFSIZE);
+			size = read(pipeEnd[0], msg, MSG_BUFSIZE);
 			printf("\tRecv: %s (%d)\n", msg, size);
 			int value = atoi(msg);
 			// Check primality
@@ -55,7 +55,7 @@ int main(int argc, char **argv){
 			printf("\t%d %sé primo\n", value, isPrime?"":"nao ");
 			
 			
-		} while(msg[0] != '0');
+		} while(msg[0] != '0' && size > 0);
 		close(pipeEnd[0]);
 		printf("Encerrando leitor\n");
 	}
