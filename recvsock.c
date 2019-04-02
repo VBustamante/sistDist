@@ -86,18 +86,19 @@ int main(int argc, char **argv){
 	char msg[MSG_BUFSIZE];
 	int printNum = 1;
 	srand(time(NULL));
-	for(int i = 0; i<=10; i++){
-		printNum = i==10? 0 : printNum;
-		sprintf(msg, "%d\n", printNum);
-		printf("Sending: %s", msg);
-		if(send(socket_res_fd, msg, strlen(msg), 0) == -1) printf("Error reading request\n");
+	int seqSize = 5;
+	for(int i = 0; i<seqSize; i++){
+		sprintf(msg, "%d", printNum);
+		printf("Sending: %s\n", msg);
+		if(send(socket_res_fd, msg, strlen(msg) + 1, 0) == -1) printf("Error reading request\n");
 
 		read(socket_res_fd, msg, MSG_BUFSIZE);
 		
-		printf("%d é %s", printNum, msg);
+		printf("%d %sé primo\n", printNum, msg[0] == '0'? "nao ":"");
 		
 		printNum += (rand() % 8) + 1;
 	}
+	send(socket_res_fd, "0", strlen(msg) + 1, 0);
 	close(socket_res_fd);
 	close(socket_fd);
 	printf("Closing Writer\n");
