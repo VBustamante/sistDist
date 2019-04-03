@@ -6,4 +6,4 @@ Implementação de mecanismos distribuídos em  c
 
 - Tarefa 1 - Sinais ✔
 - Tarefa 2 - Pipes ✔
-- Tarefa 3 - Sockets
+- Tarefa 3 - Sockets ✔
