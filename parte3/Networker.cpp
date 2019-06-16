@@ -63,10 +63,7 @@ Networker::Networker(const char *arg_port) {
 }
 
 void Networker::accept_msg() {
-  std::cout << "acpt" << std::endl;
-
   struct sockaddr_storage remote_addr{};
-  std::cout << "acpt2" << std::endl;
 
   socklen_t sin_size;
   socket_respose_fd = accept(socket_fd, (struct sockaddr *)&remote_addr, &sin_size);
@@ -74,8 +71,6 @@ void Networker::accept_msg() {
     printf("Error connecting to client\n");
     return;
   }
-
-  std::cout << "Accepted" <<std::endl;
 }
 
 void Networker::get_msg(char *message) {
@@ -92,8 +87,6 @@ void Networker::close_msg() {
 
 Networker::~Networker() {
   close(socket_fd);
-  printf("Closing Writer\n");
-
 }
 
 void Networker::send_msg(const char* host, const char* port, const char* message) {

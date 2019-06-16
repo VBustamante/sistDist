@@ -19,19 +19,19 @@
 
 
 enum class RequestType: unsigned char{
-    ELEICAO,
-    OK,
-    LIDER,
-    VIVO,
-    VIVO_OK
+  ELEICAO,
+  OK,
+  LIDER,
+  VIVO,
+  VIVO_OK,
+  size
 };
 
-
-#define MSG_BUFSIZE 13
+#define MSG_BUFSIZE 2
 
 class Networker {
   int socket_fd = 0, socket_respose_fd = 0;
-  const char * port;
+  const char *port;
 
 public:
   explicit Networker(const char *port);
@@ -52,6 +52,8 @@ public:
 
   // Open proactive socket to send data
   static void send_msg(const char* host, const char* port, const char* message);
+
+  static void send_msg(const char* port, const char* message) { send_msg("localhost", port, message); }
 };
 
 
