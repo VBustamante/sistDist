@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <time.h>
+#include "Networker.h"
 
 using namespace std;
 
@@ -11,6 +12,7 @@ bool is_sleeping = false, leader_checking = false, start_election_intention = fa
 int s_election_count = 0, s_ok_count = 0, s_leader_count = 0, s_alive_count = 0, s_alive_ok_count = 0;
 int r_election_count = 0, r_ok_count = 0, r_leader_count = 0, r_alive_count = 0, r_alive_ok_count = 0;
 int id, leader_id;
+char *port, *port2; //TODO remove these they're for testing only
 
 bool leaderStatus(){
   return false;
@@ -81,6 +83,7 @@ void *thread_ui_code(void *arg){
     }
 
     else{
+      Networker::send_msg("localhost", port2, cmd.c_str());
       cout << "invalid command" << endl;
     }
 
@@ -90,11 +93,22 @@ void *thread_ui_code(void *arg){
 }
 
 void *thread_msgs_code(void *arg){
-  time_t start_election_time;
+  time_t start_election_time = 0;
   bool on_election = false;
   cout << "MSGS" << endl;
 
+  Networker server(port);
+  char incoming[MSG_BUFSIZE];
   while(true){
+
+    server.accept_msg();
+    server.get_msg(incoming);
+    cout << "Received: " << incoming << endl;
+    server.respond_msg("OK");
+    server.close_msg();
+
+    continue;
+
     string msg = receiveMessage();
     int type = getMessageType(msg);
 
@@ -112,7 +126,7 @@ void *thread_msgs_code(void *arg){
 
       } else if (type == 1) { //received ok message
         r_ok_count++; //todo mutex
-        on_election == false;
+//        on_election == false;
 
       } else if (type == 3) { //received alive message
         r_alive_count++; //todo mutex
@@ -136,10 +150,10 @@ void *thread_msgs_code(void *arg){
       start_election_intention = false; //todo mutex
       //todo mandar mensagem p todo mundo
       on_election = true;
-      start_election_time = time(NULL);
+      start_election_time = time(nullptr);
     }
 
-    if(on_election && ((time(NULL) - start_election_time) > 10)){
+    if(on_election && ((time(nullptr) - start_election_time) > 10)){
       //this process is the new leader
       leader_id = id; //todo mutex
       //todo avisar todo mundo
@@ -148,6 +162,7 @@ void *thread_msgs_code(void *arg){
 }
 
 void *thread_leader_code(void *arg){
+  return nullptr;
   while(true){
     sleep(10); //TODO ID MULTIPLIER
     leader_checking = true; //todo mutex
@@ -164,11 +179,34 @@ void *thread_leader_code(void *arg){
   }
 }
 
-int main() {
-  sem_init(&is_sleeping_mutex, 0, 1);
-  sem_init(&check_leader_thread_mutex, 0, 1);
-  sem_init(&receive_msg_thread_mutex, 0, 1);
+int main(int argc, char **argv) {
 
+  if(argc != 3){
+    printf("Missing receiver host. run \"p3 $id $maxid\"\n"
+           "$host: Receiver's IP\n");
+    return 1;
+  }
+
+  port  = argv[1];
+  port2 = argv[2];
+
+  id = atoi(argv[1]);
+  if(id < 1){
+    printf("id should be bigger than 0\n");
+    return 1;
+  }
+
+  int maxid = atoi(argv[2]);
+//  if(maxid < id){
+//    printf("max can't be less than id \n");
+//    return 1;
+//  }
+
+
+//  sem_init(&is_sleeping_mutex, 0, 1);
+//  sem_init(&check_leader_thread_mutex, 0, 1);
+//  sem_init(&receive_msg_thread_mutex, 0, 1);
+//
   pthread_t thread_ui_id, thread_msgs_id, thread_leader_id;
 
   pthread_create(&thread_ui_id , nullptr, thread_ui_code, nullptr);
@@ -176,13 +214,15 @@ int main() {
   pthread_create(&thread_leader_id , nullptr, thread_leader_code, nullptr);
 
   pthread_join(thread_ui_id, nullptr);
-
+//
   pthread_cancel(thread_msgs_id);
   pthread_cancel(thread_leader_id);
+//
+//  sem_destroy(&is_sleeping_mutex);
+//  sem_destroy(&receive_msg_thread_mutex);
+//  sem_destroy(&check_leader_thread_mutex);
 
-  sem_destroy(&is_sleeping_mutex);
-  sem_destroy(&receive_msg_thread_mutex);
-  sem_destroy(&check_leader_thread_mutex);
+  Networker n("8080");
 
   return 0;
 }
