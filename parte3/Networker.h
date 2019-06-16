@@ -15,6 +15,8 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <iostream>
+
 
 enum class RequestType: unsigned char{
     ELEICAO,
@@ -29,6 +31,7 @@ enum class RequestType: unsigned char{
 
 class Networker {
   int socket_fd = 0, socket_respose_fd = 0;
+  const char * port;
 
 public:
   explicit Networker(const char *port);

@@ -83,7 +83,7 @@ void *thread_ui_code(void *arg){
     }
 
     else{
-      Networker::send_msg("localhost", port2, cmd.c_str());
+      Networker::send_msg("localhost", "8080", cmd.c_str());
       cout << "invalid command" << endl;
     }
 
@@ -97,10 +97,11 @@ void *thread_msgs_code(void *arg){
   bool on_election = false;
   cout << "MSGS" << endl;
 
-  Networker server(port);
+  Networker server("8080");
   char incoming[MSG_BUFSIZE];
   while(true){
 
+    cout << "Waiting accept" << endl;
     server.accept_msg();
     server.get_msg(incoming);
     cout << "Received: " << incoming << endl;
@@ -181,22 +182,22 @@ void *thread_leader_code(void *arg){
 
 int main(int argc, char **argv) {
 
-  if(argc != 3){
-    printf("Missing receiver host. run \"p3 $id $maxid\"\n"
-           "$host: Receiver's IP\n");
-    return 1;
-  }
-
-  port  = argv[1];
-  port2 = argv[2];
-
-  id = atoi(argv[1]);
-  if(id < 1){
-    printf("id should be bigger than 0\n");
-    return 1;
-  }
-
-  int maxid = atoi(argv[2]);
+//  if(argc != 3){
+//    printf("Missing receiver host. run \"p3 $id $maxid\"\n"
+//           "$host: Receiver's IP\n");
+//    return 1;
+//  }
+//
+//  port  = argv[1];
+//  port2 = argv[2];
+//
+//  id = atoi(argv[1]);
+//  if(id < 1){
+//    printf("id should be bigger than 0\n");
+//    return 1;
+//  }
+//
+//  int maxid = atoi(argv[2]);
 //  if(maxid < id){
 //    printf("max can't be less than id \n");
 //    return 1;
@@ -221,8 +222,6 @@ int main(int argc, char **argv) {
 //  sem_destroy(&is_sleeping_mutex);
 //  sem_destroy(&receive_msg_thread_mutex);
 //  sem_destroy(&check_leader_thread_mutex);
-
-  Networker n("8080");
 
   return 0;
 }

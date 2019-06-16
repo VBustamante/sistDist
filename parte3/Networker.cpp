@@ -2,20 +2,15 @@
 // Created by Victor Bustamante on 2019-06-15.
 //
 
-#include <cstdio>
-#include <sys/time.h>
-#include <cstdlib>
-#include <functional>
-#include <iostream>
 #include "Networker.h"
 
 
 #define BACKLOG 10   // how many pending connections queue will hold
 
 
-using namespace std;
+Networker::Networker(const char *arg_port) {
 
-Networker::Networker(const char *port) {
+  this->port = arg_port;
 
   struct addrinfo *servinfo;
   {
@@ -43,11 +38,11 @@ Networker::Networker(const char *port) {
         return;
       }
 
-      bind(socket_fd, p->ai_addr, p->ai_addrlen);
-//      if(){
-//        close(socket_fd);
-//        continue;
-//      }
+
+      if(bind(socket_fd, p->ai_addr, p->ai_addrlen) == -1){
+        close(socket_fd);
+        continue;
+      }
 
       break;
     }
@@ -68,7 +63,10 @@ Networker::Networker(const char *port) {
 }
 
 void Networker::accept_msg() {
+  std::cout << "acpt" << std::endl;
+
   struct sockaddr_storage remote_addr{};
+  std::cout << "acpt2" << std::endl;
 
   socklen_t sin_size;
   socket_respose_fd = accept(socket_fd, (struct sockaddr *)&remote_addr, &sin_size);
@@ -77,7 +75,7 @@ void Networker::accept_msg() {
     return;
   }
 
-  cout << "Accepted" <<endl;
+  std::cout << "Accepted" <<std::endl;
 }
 
 void Networker::get_msg(char *message) {
