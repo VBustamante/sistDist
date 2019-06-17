@@ -34,6 +34,8 @@ void *thread_msgs_code(void *arg){
 
   char incoming[MSG_BUFSIZE];
 
+  char out_port[6];
+
   while(aux_threads_running){
     server.accept_msg();
     server.get_msg(incoming);
@@ -48,7 +50,8 @@ void *thread_msgs_code(void *arg){
     if(!is_sleeping) {
       if (msg_type == RequestType::ELEICAO) {
         if (msg_sender < id){ //this process has a higher id, sends id to election starter
-          server.respond_msg(RequestType::OK, id);
+          sprintf(out_port, "%d", BASE_PORT + msg_sender);
+          Networker::send_msg(out_port, RequestType::OK, id);
           counters_sent[(int) RequestType::OK]++;
           is_claiming = true;
         }
@@ -57,18 +60,20 @@ void *thread_msgs_code(void *arg){
         is_claiming = false;
       } else if (msg_type == RequestType::VIVO) {
         if(leader_id == id){
-          server.respond_msg(RequestType::VIVO_OK, id);
+          sprintf(out_port, "%d", BASE_PORT + msg_sender);
+          Networker::send_msg(out_port, RequestType::VIVO_OK, id);
           counters_sent[(int) RequestType::VIVO_OK]++;
         }
       } else if (msg_type == RequestType::VIVO_OK) {
-        is_leader_checking = true;
+        is_leader_checking = false;
       }
     }
 
     //this handler still works even if the process is sleeping
     if (msg_type == RequestType::LIDER) { //received leader message
-       leader_id = msg_sender;
-       is_claiming = false;
+      leader_id = msg_sender;
+      is_claiming = false;
+      is_leader_checking = false;
     }
 
 
@@ -82,7 +87,16 @@ void *thread_leader_code(void *arg){
   char port[6];
 
   while(aux_threads_running){
-    if(leader_id == id) continue;
+    sleep(5);
+    if(is_sleeping) {
+      cout << "Am sleeping"<<endl;
+      continue;
+    }
+
+    if(leader_id == id) {
+      cout << "Am leader"<<endl;
+      continue;
+    }
 
     if(!is_claiming){
 
@@ -90,7 +104,7 @@ void *thread_leader_code(void *arg){
       Networker::send_msg(port, RequestType::VIVO, id);
       counters_sent[(int) RequestType::LIDER]++;
       is_leader_checking = true;
-      sleep(10);
+      sleep(2);
       if(is_leader_checking) is_claiming = true;
 
     }
@@ -112,6 +126,8 @@ void *thread_leader_code(void *arg){
       if(is_claiming){
         is_claiming = false;
         leader_id = id;
+        cout << "Am leader"<<endl;
+
 
         for(int i = 1; i<= max_id; i++){
           if(i!=id){
@@ -151,6 +167,7 @@ int main(int argc, char **argv) {
   // Startup Globs
   is_sleeping = false;
   is_leader_checking = false;
+  is_claiming = false;
   aux_threads_running = true;
   leader_id = max_id;
 
@@ -180,7 +197,7 @@ int main(int argc, char **argv) {
       sprintf(port, "%d", BASE_PORT + leader_id);
       Networker::send_msg(port, RequestType::VIVO, id);
       is_leader_checking = true;
-      sleep(10);
+      sleep(2);
 
       if (is_leader_checking){
         cout << "king's dead" << endl;
@@ -205,7 +222,7 @@ int main(int argc, char **argv) {
     else if(cmd == "4"){
       //print stats
       // TODO Stats
-      cout << "stats" << endl;
+      printf("Me: %u\nLeader: %u\n", id, leader_id.load());
     }
 
     else{

@@ -129,6 +129,7 @@ void Networker::send_msg(const char* host, const char* port, const char* message
     }
 
     if(p == nullptr){
+      printf("%u %u\n", message[0], message[1]);
       printf("Failed to connect\n");
       return;
     }
