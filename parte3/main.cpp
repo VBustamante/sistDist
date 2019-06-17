@@ -19,15 +19,6 @@ int id, max_id;
 
 void *thread_msgs_code(void *arg){
 
-  std::string RequestTypeNames[] = {
-      "ELEICAO",
-      "OK",
-      "LIDER",
-      "VIVO",
-      "VIVO_OK"
-  };
-
-
   char port[6];
   sprintf(port, "%d", BASE_PORT + id);
   Networker server(port);
@@ -44,7 +35,7 @@ void *thread_msgs_code(void *arg){
     auto msg_sender = (unsigned char) incoming[1];
 
     counters_recv[(int) msg_type]++;
-    printf("Got %s from %u\n", RequestTypeNames[(int) msg_type].c_str(), msg_sender);
+    printf("Got %s from %u\n", RequestTypeNames((unsigned char) msg_type).c_str(), msg_sender);
 
     // these handlers are inactive if the process is sleeping
     if(!is_sleeping) {
@@ -221,8 +212,17 @@ int main(int argc, char **argv) {
 
     else if(cmd == "4"){
       //print stats
-      // TODO Stats
-      printf("Me: %u\nLeader: %u\n", id, leader_id.load());
+      printf("Me: %8u Leader: %u\n", id, leader_id.load());
+
+      printf("|---------------------------|\n");
+      printf("|%8s|%8s|%9s|\n", "MSG", "SENT", "RECEIVED");
+
+      for(int i = 0; i < (int) RequestType::size; i++){
+        printf("|---------------------------|\n");
+        printf("|%8s|%8u|%9u|\n", RequestTypeNames(i).c_str(), counters_sent[i].load(), counters_recv[i].load());
+      }
+      printf("|---------------------------|\n");
+
     }
 
     else{

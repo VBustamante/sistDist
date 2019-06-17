@@ -7,6 +7,18 @@
 
 #define BACKLOG 10   // how many pending connections queue will hold
 
+std::string const& RequestTypeNames(unsigned char index){
+  static std::vector<std::string> str = {
+      "ELEICAO",
+      "OK",
+      "LIDER",
+      "VIVO",
+      "VIVO_OK"
+  };
+  return str.at(index);  // This will throw exception if index is not
+  // within bounds.
+}
+
 
 Networker::Networker(const char *arg_port) {
 
@@ -130,15 +142,7 @@ void Networker::send_msg(const char* host, const char* port, const char* message
 
     if(p == nullptr){
 
-      std::string RequestTypeNames[] = {
-          "ELEICAO",
-          "OK",
-          "LIDER",
-          "VIVO",
-          "VIVO_OK"
-      };
-
-      printf("Failed to send %s to %s\n", RequestTypeNames[(int) message[0]].c_str(), port);
+      printf("Failed to send %s to %s\n", RequestTypeNames(message[0]).c_str(), port);
       return;
     }
   }

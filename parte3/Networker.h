@@ -16,6 +16,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <iostream>
+#include <vector>
 
 
 enum class RequestType: unsigned char{
@@ -26,6 +27,8 @@ enum class RequestType: unsigned char{
   VIVO_OK,
   size
 };
+
+std::string const& RequestTypeNames(unsigned char index);
 
 #define MSG_BUFSIZE 2
 #define TIMEOUT 2
