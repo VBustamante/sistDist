@@ -95,25 +95,25 @@ void *thread_leader_code(void *arg){
 
     if(leader_id == id) {
       cout << "Am leader"<<endl;
-      continue;
+    }else{
+      if(!is_claiming){
+
+        sprintf(port, "%d", BASE_PORT + leader_id);
+        Networker::send_msg(port, RequestType::VIVO, id);
+        counters_sent[(int) RequestType::LIDER]++;
+        is_leader_checking = true;
+        sleep(2);
+        if(is_leader_checking) is_claiming = true;
+
+      }
     }
 
-    if(!is_claiming){
-
-      sprintf(port, "%d", BASE_PORT + leader_id);
-      Networker::send_msg(port, RequestType::VIVO, id);
-      counters_sent[(int) RequestType::LIDER]++;
-      is_leader_checking = true;
-      sleep(2);
-      if(is_leader_checking) is_claiming = true;
-
-    }
 
     if (!is_claiming){
-      cout << "leader is alive" << endl;
+      cout << "Leadership is Estabilished" << endl;
       continue;
     } else {
-      cout << "king's dead" << endl;
+      cout << "Claiming Leadership" << endl;
       sleep(1); // TODO id based timeouts
 
       for(int i = 1; i<= max_id; i++){
@@ -167,9 +167,9 @@ int main(int argc, char **argv) {
   // Startup Globs
   is_sleeping = false;
   is_leader_checking = false;
-  is_claiming = false;
+  is_claiming = true;
   aux_threads_running = true;
-  leader_id = max_id;
+  leader_id = 0;
 
 
   // Start threads
