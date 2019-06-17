@@ -28,9 +28,10 @@ enum class RequestType: unsigned char{
 };
 
 #define MSG_BUFSIZE 2
+#define TIMEOUT 2
 
 class Networker {
-  int socket_fd = 0, socket_respose_fd = 0;
+  int socket_fd = 0, socket_conn_fd = 0;
   const char *port;
 
 public:
@@ -54,6 +55,17 @@ public:
   static void send_msg(const char* host, const char* port, const char* message);
 
   static void send_msg(const char* port, const char* message) { send_msg("localhost", port, message); }
+
+  void respond_msg(RequestType type, int id){
+    char msg[MSG_BUFSIZE] = {(char) type, (char) id};
+    respond_msg(msg);
+  }
+
+  static void send_msg(const char* port, RequestType type, int id) {
+    char msg[MSG_BUFSIZE] = {(char) type, (char) id};
+    send_msg(port, msg);
+  }
+
 };
 
 

@@ -38,6 +38,12 @@ Networker::Networker(const char *arg_port) {
         return;
       }
 
+      struct timeval tv{};
+      tv.tv_sec = TIMEOUT;
+      tv.tv_usec = 0;
+      setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+
+
 
       if(bind(socket_fd, p->ai_addr, p->ai_addrlen) == -1){
         close(socket_fd);
@@ -66,23 +72,26 @@ void Networker::accept_msg() {
   struct sockaddr_storage remote_addr{};
 
   socklen_t sin_size;
-  socket_respose_fd = accept(socket_fd, (struct sockaddr *)&remote_addr, &sin_size);
-  if(socket_respose_fd == -1){
+  socket_conn_fd = accept(socket_fd, (struct sockaddr *)&remote_addr, &sin_size);
+  if(socket_conn_fd == -1){
     printf("Error connecting to client\n");
     return;
   }
 }
 
 void Networker::get_msg(char *message) {
-  read(socket_respose_fd, message, MSG_BUFSIZE);
+  if(read(socket_conn_fd, message, MSG_BUFSIZE) != MSG_BUFSIZE){
+    message[0]=(char) RequestType::size;
+    message[1]= 0;
+  }
 }
 
 void Networker::respond_msg(const char *message) {
-  if(send(socket_respose_fd, message, MSG_BUFSIZE, 0) == -1) printf("Error reading request\n");
+  if(send(socket_conn_fd, message, MSG_BUFSIZE, 0) == -1) printf("Error reading request\n");
 }
 
 void Networker::close_msg() {
-  close(socket_respose_fd);
+  close(socket_conn_fd);
 }
 
 Networker::~Networker() {
@@ -127,5 +136,6 @@ void Networker::send_msg(const char* host, const char* port, const char* message
   freeaddrinfo(servinfo);
 
   send(socket_fd, message, MSG_BUFSIZE, 0);
+
   close(socket_fd);
 }
