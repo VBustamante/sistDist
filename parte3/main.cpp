@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <time.h>
+#include <math.h>
 #include "Networker.h"
 
 using namespace std;
@@ -45,6 +46,8 @@ void *thread_msgs_code(void *arg){
           Networker::send_msg(out_port, RequestType::OK, id);
           counters_sent[(int) RequestType::OK]++;
           is_claiming = true;
+        }else{
+          is_claiming = false;
         }
 
       } else if (msg_type == RequestType::OK) {
@@ -63,7 +66,7 @@ void *thread_msgs_code(void *arg){
     //this handler still works even if the process is sleeping
     if (msg_type == RequestType::LIDER) { //received leader message
       leader_id = msg_sender;
-      is_claiming = false;
+//      is_claiming = false;
       is_leader_checking = false;
     }
 
@@ -91,10 +94,11 @@ void *thread_leader_code(void *arg){
 
         sprintf(port, "%d", BASE_PORT + leader_id);
         Networker::send_msg(port, RequestType::VIVO, id);
-        counters_sent[(int) RequestType::LIDER]++;
+        counters_sent[(int) RequestType::VIVO]++;
         is_leader_checking = true;
         sleep(2);
         if(is_leader_checking) is_claiming = true;
+        sleep(1 + (int)((max_id - id) * 0.3));
 
       }
     }
@@ -105,12 +109,13 @@ void *thread_leader_code(void *arg){
       continue;
     } else {
       cout << "Claiming Leadership" << endl;
-      sleep(1); // TODO id based timeouts
 
       for(int i = 1; i<= max_id; i++){
         if(i!=id){
           sprintf(port, "%d", BASE_PORT + i);
           Networker::send_msg(port, RequestType::ELEICAO, id);
+          counters_sent[(int) RequestType::ELEICAO]++;
+
         }
       }
       sleep(10);
@@ -124,6 +129,8 @@ void *thread_leader_code(void *arg){
           if(i!=id){
             sprintf(port, "%d", BASE_PORT + i);
             Networker::send_msg(port, RequestType::LIDER, id);
+            counters_sent[(int) RequestType::LIDER]++;
+
           }
         }
       }
@@ -175,6 +182,7 @@ int main(int argc, char **argv) {
   cout << "2 - go to sleep" << endl;
   cout << "3 - wake up" << endl;
   cout << "4 - stats" << endl;
+  cout << "5 - clear stats" << endl;
   cout << "end - exit" << endl;
 
   do {
@@ -187,6 +195,8 @@ int main(int argc, char **argv) {
       char port[6];
       sprintf(port, "%d", BASE_PORT + leader_id);
       Networker::send_msg(port, RequestType::VIVO, id);
+      counters_sent[(int) RequestType::VIVO]++;
+
       is_leader_checking = true;
       sleep(2);
 
@@ -222,6 +232,16 @@ int main(int argc, char **argv) {
         printf("|%8s|%8u|%9u|\n", RequestTypeNames(i).c_str(), counters_sent[i].load(), counters_recv[i].load());
       }
       printf("|---------------------------|\n");
+
+    }
+
+    else if(cmd == "5"){
+      // Clear stats
+      for(int i = 0; i < (int) RequestType::size; i++){
+        counters_sent[i] = 0;
+        counters_recv[i] = 0;
+      }
+      cout << "cleared stats" << endl;
 
     }
 
